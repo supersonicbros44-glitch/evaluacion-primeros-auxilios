@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluación: Primeros Auxilios Básicos</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eef2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
+    .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 650px; }
+    h2 { color: #2c3e50; margin-top: 0; }
+    .timer { font-size: 1.3rem; font-weight: bold; color: #d9534f; text-align: right; margin-bottom: 20px; background: #ffebee; padding: 10px; border-radius: 5px; }
+    .question { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+    .question p { font-weight: 600; color: #34495e; margin-bottom: 12px; }
+    label { display: block; margin: 8px 0; cursor: pointer; color: #555; }
+    label:hover { color: #000; }
+    input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 15px; font-size: 1rem; }
+    button { background: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 1rem; font-weight: bold; transition: background 0.2s; }
+    button:hover { background: #2980b9; }
+    .correct { color: #27ae60; font-weight: bold; }
+    .incorrect { color: #c0392b; font-weight: bold; }
+    .revision-item { background: #f8f9fa; padding: 12px; margin-bottom: 12px; border-radius: 5px; border-left: 5px solid #ccc; }
+    .revision-item.ok { border-color: #27ae60; }
+    .revision-item.fail { border-color: #c0392b; }
+  </style>
+</head>
+<body>
+
+<div class="card" id="app">
+  <h2>Evaluación: Primeros Auxilios Básicos</h2>
+  <p>Ingresa tu ID de usuario para comenzar. Tienes un límite máximo de 2 intentos de 5 minutos cada uno.</p>
+  <input type="text" id="usuarioId" placeholder="Ej: estudiante_10">
+  <button onclick="iniciarEvaluacion()">Iniciar Evaluación</button>
+</div>
+
+<script>
+  let tiempoRestante = 0;
+  let intervaloTimer = null;
+  let preguntasCargadas = [];
+  let usuarioActual = "";
+
+  async function iniciarEvaluacion() {
+    usuarioActual = document.getElementById('usuarioId').value.trim();
+    if (!usuarioActual) return alert("Ingresa un ID de usuario válido.");
+
+    try {
+      const res = await fetch('/api/iniciar-evaluacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuarioId: usuarioActual })
+      });
+
+      const data = await res.json();
+      if (!res.ok) return alert(data.error);
+
+      preguntasCargadas = data.preguntas;
+      tiempoRestante = data.tiempoLimiteSegundos;
+      
+      renderizarExamen(data.intento);
+      iniciarContador();
+    } catch (err) {
+      alert("Error al conectar con el servidor.");
+    }
+  }
+
+  function renderizarExamen(intento) {
+    let html = `
+      <div class="timer">Tiempo restante: <span id="clock">05:00</span></div>
+      <p><strong>Número de intento:</strong> ${intento} de 2</p>
+      <form id="quizForm">
+    `;
+
+    preguntasCargadas.forEach((p, index) => {
+      html += `
+        <div class="question">
+          <p>${index + 1}. ${p.texto}</p>
+          ${p.opciones.map((op, i) => `
+            <label>
+              <input type="radio" name="p_${p.id}" value="${i}"> ${op}
+            </label>
+          `).join('')}
+        </div>
+      `;
+    });
+
+    html += `<button type="button" onclick="enviarRespuestas()">Finalizar y Calificar</button></form>`;
+    document.getElementById('app').innerHTML = html;
+  }
+
+  function iniciarContador() {
+    intervaloTimer = setInterval(() => {
+      tiempoRestante--;
+      const min = Math.floor(tiempoRestante / 60);
+      const seg = tiempoRestante % 60;
+      document.getElementById('clock').innerText = `${min < 10 ? '0' : ''}${min}:${seg < 10 ? '0' : ''}${seg}`;
+
+      if (tiempoRestante <= 0) {
+        clearInterval(intervaloTimer);
+        alert("¡El tiempo ha finalizado!");
+        enviarRespuestas();
+      }
+    }, 1000);
+  }
+
+  async function enviarRespuestas() {
+    clearInterval(intervaloTimer);
+    const respuestas = {};
+
+    preguntasCargadas.forEach(p => {
+      const selected = document.querySelector(`input[name="p_${p.id}"]:checked`);
+      if (selected) respuestas[p.id] = parseInt(selected.value);
+    });
+
+    try {
+      const res = await fetch('/api/finalizar-evaluacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuarioId: usuarioActual, respuestas })
+      });
+
+      const data = await res.json();
+      if (!res.ok) return alert(data.error);
+
+      renderizarResultados(data);
+    } catch (err) {
+      alert("Error al enviar tus respuestas.");
+    }
+  }
+
+  function renderizarResultados(data) {
+    let html = `
+      <h2>Resultados de la Evaluación</h2>
+      <h3 style="color: #2c3e50;">Calificación Final: ${data.calificacion} / 5.0</h3>
+      <p>Respondiste correctamente ${data.aciertos} de ${data.totalPreguntas} preguntas.</p>
+      <hr>
+      <h3>Revisión Detallada:</h3>
+    `;
+
+    data.revision.forEach((r, i) => {
+      html += `
+        <div class="revision-item ${r.esCorrecta ? 'ok' : 'fail'}">
+          <p><strong>${i + 1}. ${r.pregunta}</strong></p>
+          <p class="${r.esCorrecta ? 'correct' : 'incorrect'}">
+            Tu respuesta: ${r.tuRespuesta} ${r.esCorrecta ? '✓' : '✗'}
+          </p>
+          ${!r.esCorrecta ? `<p>Respuesta correcta: <strong>${r.respuestaCorrecta}</strong></p>` : ''}
+        </div>
+      `;
+    });
+
+    html += `<button onclick="location.reload()">Regresar al Inicio</button>`;
+    document.getElementById('app').innerHTML = html;
+  }
+</script>
+</body>
+</html>
