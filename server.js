@@ -6,181 +6,31 @@ app.use(express.static('.')); // Sirve el archivo index.html automáticamente
 
 // Banco de 25 preguntas sobre Primeros Auxilios Básicos con imágenes explicativas
 const bancoPreguntas = [
-  { 
-    id: 1, 
-    texto: "¿Cuál es la regla de oro en primeros auxilios (P.A.S.)?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Star_of_life_caution.svg/640px-Star_of_life_caution.svg.png",
-    opciones: ["Proteger, Avisar, Socorrer", "Prevenir, Auxiliar, Sanar", "Presionar, Atender, Salvar", "Parar, Analizar, Secar"], 
-    correcta: 0 
-  },
-  { 
-    id: 2, 
-    texto: "¿Cuál es la relación de compresiones e insuflaciones en RCP para adultos?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/1/18/CPR_Adult_Hands.jpg/640px-CPR_Adult_Hands.jpg",
-    opciones: ["15 compresiones x 2 insuflaciones", "30 compresiones x 2 insuflaciones", "50 compresiones x 5 insuflaciones", "10 compresiones x 1 insuflación"], 
-    correcta: 1 
-  },
-  { 
-    id: 3, 
-    texto: "¿Qué se debe hacer primero ante una quemadura de primer grado?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Water_tap_running.jpg/640px-Water_tap_running.jpg",
-    opciones: ["Aplicar crema o aceite", "Enfriar con abundante agua fría corriente", "Reventar las ampollas", "Colocar hielo directamente"], 
-    correcta: 1 
-  },
-  { 
-    id: 4, 
-    texto: "En caso de atragantamiento total en un adulto consciente, ¿qué maniobra se aplica?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Heimlich_maneuver.svg/640px-Heimlich_maneuver.svg.png",
-    opciones: ["Maniobra de Valsalva", "Maniobra de Heimlich", "Golpes en la espalda únicamente", "R.C.P. inmediata"], 
-    correcta: 1 
-  },
-  { 
-    id: 5, 
-    texto: "¿Cómo se debe posicionar a una persona inconsciente que respira normalmente?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Recovery_position.svg/640px-Recovery_position.svg.png",
-    opciones: ["Boca arriba (Decúbito supino)", "Boca abajo (Decúbito prono)", "Posición Lateral de Seguridad (PLS)", "Sentado con la cabeza hacia atrás"], 
-    correcta: 2 
-  },
-  { 
-    id: 6, 
-    texto: "¿Qué NO se debe hacer ante una convulsión?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Seizure_icon.png/640px-Seizure_icon.png",
-    opciones: ["Proteger la cabeza de golpes", "Sujetar fuertemente a la persona o meterle objetos en la boca", "Tomar el tiempo de duración", "Aflojar ropa apretada"], 
-    correcta: 1 
-  },
-  { 
-    id: 7, 
-    texto: "Ante una hemorragia severa en una extremidad, ¿cuál es la primera medida?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Direct_pressure.jpg/640px-Direct_pressure.jpg",
-    opciones: ["Aplicar un torniquete de inmediato", "Presión directa sobre la herida con tela limpia", "Lavar con alcohol", "Elevar las piernas del paciente"], 
-    correcta: 1 
-  },
-  { 
-    id: 8, 
-    texto: "¿Cuál es el número de emergencias médico estándar en la mayoría de países de LATAM/España?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/6/63/Emergency_call_icon.svg/640px-Emergency_call_icon.svg.png",
-    opciones: ["911 / 112", "011", "100", "555"], 
-    correcta: 0 
-  },
-  { 
-    id: 9, 
-    texto: "¿Qué signo indica una obstrucción GRAVE de la vía aérea?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/2/23/Universal_Choking_Sign.svg/640px-Universal_Choking_Sign.svg.png",
-    opciones: ["El paciente tose fuertemente", "El paciente puede hablar pero con dificultad", "El paciente no puede hablar, toser ni respirar", "El paciente estornuda continuamente"], 
-    correcta: 2 
-  },
-  { 
-    id: 10, 
-    texto: "¿Qué se debe hacer si un objeto está incrustado en el cuerpo del paciente?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/3/36/Impaled_object_illustration.png/640px-Impaled_object_illustration.png",
-    opciones: ["Retirarlo rápidamente", "Inmovilizar el objeto sin extraerlo", "Empujarlo un poco más", "Lavar la zona alrededor sacando el objeto"], 
-    correcta: 1 
-  },
-  { 
-    id: 11, 
-    texto: "En una insolación o golpe de calor, ¿qué acción es correcta?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/1/10/Sun_icon.svg/640px-Sun_icon.svg.png",
-    opciones: ["Dar de beber alcohol o café", "Mover a la persona a un lugar fresco y aplicar compresas frías", "Meter a la persona en agua helada de golpe", "Cubrirlo con mantas térmicas"], 
-    correcta: 1 
-  },
-  { 
-    id: 12, 
-    texto: "¿Qué evalúa la nemotecnia A.V.D.I. en el estado de conciencia?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Consciousness_check.jpg/640px-Consciousness_check.jpg",
-    opciones: ["Alerta, Verbal, Dolor, Inconsciente", "Aire, Venas, Dolor, Infección", "Atención, Vista, Diálogo, Impulso", "Auxilio, Vía, Diagnóstico, Intervención"], 
-    correcta: 0 
-  },
-  { 
-    id: 13, 
-    texto: "Ante una fractura abierta (hueso expuesto), ¿qué se debe evitar?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Compound_fracture_diagram.svg/640px-Compound_fracture_diagram.svg.png",
-    opciones: ["Cubrir la herida con gasa estéril", "Intentar reintroducir el hueso dentro de la piel", "Inmovilizar la zona", "Llamar a emergencias"], 
-    correcta: 1 
-  },
-  { 
-    id: 14, 
-    texto: "¿Cuál es la profundidad recomendada de las compresiones torácicas en adultos?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/9/90/Chest_Compressions.svg/640px-Chest_Compressions.svg.png",
-    opciones: ["Entre 1 y 2 cm", "Entre 5 y 6 cm", "Más de 10 cm", "Sin importar la profundidad"], 
-    correcta: 1 
-  },
-  { 
-    id: 15, 
-    texto: "¿Qué es el shock anafiláctico?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/d/d6/EpiPen_Auto-Injector.jpg/640px-EpiPen_Auto-Injector.jpg",
-    opciones: ["Una fractura múltiple", "Una reacción alérgica grave y potencialmente mortal", "Un desmayo por ayuno", "Un paro cardíaco repentino"], 
-    correcta: 1 
-  },
-  { 
-    id: 16, 
-    texto: "¿Qué hacer ante un sangrado nasal (epistaxis)?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/0/01/Pinch_nose_epistaxis.svg/640px-Pinch_nose_epistaxis.svg.png",
-    opciones: ["Inclinar la cabeza hacia atrás", "Inclinar la cabeza ligeramente hacia adelante y presionar las fosas nasales", "Acostar al paciente boca arriba", "Tapar la nariz con algodón con alcohol"], 
-    correcta: 1 
-  },
-  { 
-    id: 17, 
-    texto: "¿Qué se debe verificar antes de realizar RCP?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/8/88/Checking_responsiveness.jpg/640px-Checking_responsiveness.jpg",
-    opciones: ["Si el paciente tiene identificación", "Que la escena sea segura, la conciencia y la respiración del paciente", "El pulso en el pie del paciente", "La presión arterial del paciente"], 
-    correcta: 1 
-  },
-  { 
-    id: 18, 
-    texto: "Si una persona sufre una descarga eléctrica, ¿qué se hace primero?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/3/35/High_voltage_warning.svg/640px-High_voltage_warning.svg.png",
-    opciones: ["Tocarla para moverla rápidamente", "Cortar la corriente eléctrica antes de tocar a la víctima", "Echarle agua fría", "Tirarla del brazo"], 
-    correcta: 1 
-  },
-  { 
-    id: 19, 
-    texto: "¿Qué síntoma es característico de un Infarto Agudo de Miocardio?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/3/30/Chest_pain_location.svg/640px-Chest_pain_location.svg.png",
-    opciones: ["Dolor opresivo en el pecho que puede ir al brazo izquierdo o mandíbula", "Fiebre alta y escalofríos", "Dolor punzante en el pie", "Visión borrosa momentánea"], 
-    correcta: 0 
-  },
-  { 
-    id: 20, 
-    texto: "¿Cuál es el ritmo ideal de compresiones por minuto en RCP?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Metronome_icon.svg/640px-Metronome_icon.svg.png",
-    opciones: ["60 a 80 por minuto", "100 a 120 por minuto", "150 a 200 por minuto", "40 a 50 por minuto"], 
-    correcta: 1 
-  },
-  { 
-    id: 21, 
-    texto: "¿Qué se aplica en una picadura de abeja si el aguijón sigue visible?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Apis_mellifera_sting.jpg/640px-Apis_mellifera_sting.jpg",
-    opciones: ["Apretarlo con los dedos para sacarlo", "Rasparlo suavemente con una tarjeta rígida para no inyectar más veneno", "Usar pinzas y apretar el saco de veneno", "Dejarlo ahí hasta llegar al hospital"], 
-    correcta: 1 
-  },
-  { 
-    id: 22, 
-    texto: "Ante un desmayo (síncope), ¿qué posición ayuda a recuperar la irrigación sanguínea?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/2/22/Fainting_position.svg/640px-Fainting_position.svg.png",
-    opciones: ["Sentado con la cabeza entre las piernas o acostado con piernas elevadas", "De pie caminando despacio", "Boca abajo", "Inclinado hacia un lado"], 
-    correcta: 0 
-  },
-  { 
-    id: 23, 
-    texto: "¿Qué componente del botiquín sirve para limpiar heridas superficiales?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Saline_solution_bottle.jpg/640px-Saline_solution_bottle.jpg",
-    opciones: ["Solución salina (suero fisiológico) o agua y jabón", "Alcohol de 96° directo en la herida abierta", "Lisoform", "Merthiolate rojo directo"], 
-    correcta: 0 
-  },
-  { 
-    id: 24, 
-    texto: "En caso de un Accidente Cerebrovascular (ACV), ¿qué prueba rápida se realiza?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/9/91/FAST_stroke_icon.svg/640px-FAST_stroke_icon.svg.png",
-    opciones: ["Pedir que sonría, levante ambos brazos y hable", "Pedir que salte en un pie", "Revisar la temperatura", "Hacer prueba de reflejo en la rodilla"], 
-    correcta: 0 
-  },
-  { 
-    id: 25, 
-    texto: "¿Qué significan las siglas DEA en emergencias médicas?", 
-    imagen: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/1/1a/AED_symbol.svg/640px-AED_symbol.svg.png",
-    opciones: ["Desfibrilador Externo Automático", "Diagnóstico de Emergencia Avanzado", "Dispositivo de Evaluación Anatómica", "Dosis Emergente de Auxilio"], 
-    correcta: 0 
-  }
+  { id: 1, texto: "¿Cuál es la regla de oro en primeros auxilios (P.A.S.)?", imagen: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=500", opciones: ["Proteger, Avisar, Socorrer", "Prevenir, Auxiliar, Sanar", "Presionar, Atender, Salvar", "Parar, Analizar, Secar"], correcta: 0 },
+  { id: 2, texto: "¿Cuál es la relación de compresiones e insuflaciones en RCP para adultos?", imagen: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=500", opciones: ["15 compresiones x 2 insuflaciones", "30 compresiones x 2 insuflaciones", "50 compresiones x 5 insuflaciones", "10 compresiones x 1 insuflación"], correcta: 1 },
+  { id: 3, texto: "¿Qué se debe hacer primero ante una quemadura de primer grado?", imagen: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=500", opciones: ["Aplicar crema o aceite", "Enfriar con abundante agua fría corriente", "Reventar las ampollas", "Colocar hielo directamente"], correcta: 1 },
+  { id: 4, texto: "En caso de atragantamiento total en un adulto consciente, ¿qué maniobra se aplica?", imagen: "https://images.unsplash.com/photo-1584515933487-779824d29309?w=500", opciones: ["Maniobra de Valsalva", "Maniobra de Heimlich", "Golpes en la espalda únicamente", "R.C.P. inmediata"], correcta: 1 },
+  { id: 5, texto: "¿Cómo se debe posicionar a una persona inconsciente que respira normalmente?", imagen: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=500", opciones: ["Boca arriba (Decúbito supino)", "Boca abajo (Decúbito prono)", "Posición Lateral de Seguridad (PLS)", "Sentado con la cabeza hacia atrás"], correcta: 2 },
+  { id: 6, texto: "¿Qué NO se debe hacer ante una convulsión?", imagen: "https://images.unsplash.com/photo-1527613426441-4da17471b66d?w=500", opciones: ["Proteger la cabeza de golpes", "Sujetar fuertemente a la persona o meterle objetos en la boca", "Tomar el tiempo de duración", "Aflojar ropa apretada"], correcta: 1 },
+  { id: 7, texto: "Ante una hemorragia severa en una extremidad, ¿cuál es la primera medida?", imagen: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?w=500", opciones: ["Aplicar un torniquete de inmediato", "Presión directa sobre la herida con tela limpia", "Lavar con alcohol", "Elevar las piernas del paciente"], correcta: 1 },
+  { id: 8, texto: "¿Cuál es el número de emergencias médico estándar en la mayoría de países de LATAM/España?", imagen: "https://images.unsplash.com/photo-1583912267670-6575ad3736f8?w=500", opciones: ["911 / 112", "011", "100", "555"], correcta: 0 },
+  { id: 9, texto: "¿Qué signo indica una obstrucción GRAVE de la vía aérea?", imagen: "https://images.unsplash.com/photo-1584515933487-779824d29309?w=500", opciones: ["El paciente tose fuertemente", "El paciente puede hablar pero con dificultad", "El paciente no puede hablar, toser ni respirar", "El paciente estornuda continuamente"], correcta: 2 },
+  { id: 10, texto: "¿Qué se debe hacer si un objeto está incrustado en el cuerpo del paciente?", imagen: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?w=500", opciones: ["Retirarlo rápidamente", "Inmovilizar el objeto sin extraerlo", "Empujarlo un poco más", "Lavar la zona alrededor sacando el objeto"], correcta: 1 },
+  { id: 11, texto: "En una insolación o golpe de calor, ¿qué acción es correcta?", imagen: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500", opciones: ["Dar de beber alcohol o café", "Mover a la persona a un lugar fresco y aplicar compresas frías", "Meter a la persona en agua helada de golpe", "Cubrirlo con mantas térmicas"], correcta: 1 },
+  { id: 12, texto: "¿Qué evalúa la nemotecnia A.V.D.I. en el estado de conciencia?", imagen: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=500", opciones: ["Alerta, Verbal, Dolor, Inconsciente", "Aire, Venas, Dolor, Infección", "Atención, Vista, Diálogo, Impulso", "Auxilio, Vía, Diagnóstico, Intervención"], correcta: 0 },
+  { id: 13, texto: "Ante una fractura abierta (hueso expuesto), ¿qué se debe evitar?", imagen: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=500", opciones: ["Cubrir la herida con gasa estéril", "Intentar reintroducir el hueso dentro de la piel", "Inmovilizar la zona", "Llamar a emergencias"], correcta: 1 },
+  { id: 14, texto: "¿Cuál es la profundidad recomendada de las compresiones torácicas en adultos?", imagen: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=500", opciones: ["Entre 1 y 2 cm", "Entre 5 y 6 cm", "Más de 10 cm", "Sin importar la profundidad"], correcta: 1 },
+  { id: 15, texto: "¿Qué es el shock anafiláctico?", imagen: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500", opciones: ["Una fractura múltiple", "Una reacción alérgica grave y potencialmente mortal", "Un desmayo por ayuno", "Un paro cardíaco repentino"], correcta: 1 },
+  { id: 16, texto: "¿Qué hacer ante un sangrado nasal (epistaxis)?", imagen: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=500", opciones: ["Inclinar la cabeza hacia atrás", "Inclinar la cabeza ligeramente hacia adelante y presionar las fosas nasales", "Acostar al paciente boca arriba", "Tapar la nariz con algodón con alcohol"], correcta: 1 },
+  { id: 17, texto: "¿Qué se debe verificar antes de realizar RCP?", imagen: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=500", opciones: ["Si el paciente tiene identificación", "Que la escena sea segura, la conciencia y la respiración del paciente", "El pulso en el pie del paciente", "La presión arterial del paciente"], correcta: 1 },
+  { id: 18, texto: "Si una persona sufre una descarga eléctrica, ¿qué se hace primero?", imagen: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=500", opciones: ["Tocarla para moverla rápidamente", "Cortar la corriente eléctrica antes de tocar a la víctima", "Echarle agua fría", "Tirarla del brazo"], correcta: 1 },
+  { id: 19, texto: "¿Qué síntoma es característico de un Infarto Agudo de Miocardio?", imagen: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=500", opciones: ["Dolor opresivo en el pecho que puede ir al brazo izquierdo o mandíbula", "Fiebre alta y escalofríos", "Dolor punzante en el pie", "Visión borrosa momentánea"], correcta: 0 },
+  { id: 20, texto: "¿Cuál es el ritmo ideal de compresiones por minuto en RCP?", imagen: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=500", opciones: ["60 a 80 por minuto", "100 a 120 por minuto", "150 a 200 por minuto", "40 a 50 por minuto"], correcta: 1 },
+  { id: 21, texto: "¿Qué se aplica en una picadura de abeja si el aguijón sigue visible?", imagen: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=500", opciones: ["Apretarlo con los dedos para sacarlo", "Rasparlo suavemente con una tarjeta rígida para no inyectar más veneno", "Usar pinzas y apretar el saco de veneno", "Dejarlo ahí hasta llegar al hospital"], correcta: 1 },
+  { id: 22, texto: "Ante un desmayo (síncope), ¿qué posición ayuda a recuperar la irrigación sanguínea?", imagen: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=500", opciones: ["Sentado con la cabeza entre las piernas o acostado con piernas elevadas", "De pie caminando despacio", "Boca abajo", "Inclinado hacia un lado"], correcta: 0 },
+  { id: 23, texto: "¿Qué componente del botiquín sirve para limpiar heridas superficiales?", imagen: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500", opciones: ["Solución salina (suero fisiológico) o agua y jabón", "Alcohol de 96° directo en la herida abierta", "Lisoform", "Merthiolate rojo directo"], correcta: 0 },
+  { id: 24, texto: "En caso de un Accidente Cerebrovascular (ACV), ¿qué prueba rápida se realiza?", imagen: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=500", opciones: ["Pedir que sonría, levante ambos brazos y hable", "Pedir que salte en un pie", "Revisar la temperatura", "Hacer prueba de reflejo en la rodilla"], correcta: 0 },
+  { id: 25, texto: "¿Qué significan las siglas DEA en emergencias médicas?", imagen: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=500", opciones: ["Desfibrilador Externo Automático", "Diagnóstico de Emergencia Avanzado", "Dispositivo de Evaluación Anatómica", "Dosis Emergente de Auxilio"], correcta: 0 }
 ];
 
 // Almacenamiento temporal en memoria
