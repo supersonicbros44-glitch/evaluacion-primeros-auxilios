@@ -10,16 +10,17 @@
     .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 650px; }
     h2 { color: #2c3e50; margin-top: 0; }
     .timer { font-size: 1.3rem; font-weight: bold; color: #d9534f; text-align: right; margin-bottom: 20px; background: #ffebee; padding: 10px; border-radius: 5px; }
-    .question { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-    .question p { font-weight: 600; color: #34495e; margin-bottom: 12px; }
-    label { display: block; margin: 8px 0; cursor: pointer; color: #555; }
-    label:hover { color: #000; }
+    .question { margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+    .question p { font-weight: 600; color: #34495e; margin-bottom: 12px; font-size: 1.05rem; }
+    .question-img { width: 100%; max-height: 280px; object-fit: contain; background: #f8f9fa; border-radius: 8px; margin: 10px 0 15px 0; border: 1px solid #e0e0e0; }
+    label { display: block; margin: 10px 0; cursor: pointer; color: #444; padding: 8px; border-radius: 5px; transition: background 0.2s; }
+    label:hover { background: #f0f4f8; color: #000; }
     input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 15px; font-size: 1rem; }
     button { background: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 1rem; font-weight: bold; transition: background 0.2s; }
     button:hover { background: #2980b9; }
     .correct { color: #27ae60; font-weight: bold; }
     .incorrect { color: #c0392b; font-weight: bold; }
-    .revision-item { background: #f8f9fa; padding: 12px; margin-bottom: 12px; border-radius: 5px; border-left: 5px solid #ccc; }
+    .revision-item { background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-radius: 5px; border-left: 5px solid #ccc; }
     .revision-item.ok { border-color: #27ae60; }
     .revision-item.fail { border-color: #c0392b; }
   </style>
@@ -74,6 +75,7 @@
       html += `
         <div class="question">
           <p>${index + 1}. ${p.texto}</p>
+          ${p.imagen ? `<img src="${p.imagen}" alt="Imagen referente a la pregunta" class="question-img">` : ''}
           ${p.opciones.map((op, i) => `
             <label>
               <input type="radio" name="p_${p.id}" value="${i}"> ${op}
