@@ -10,7 +10,7 @@
     h2 { color: #2c3e50; text-align: center; }
     .form-group { margin-bottom: 15px; }
     label { font-weight: bold; display: block; margin-bottom: 5px; }
-    input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+    input[type="text"], input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
     button { background: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 10px; }
     button:hover { background: #219150; }
     .timer { background: #ffeaa7; color: #d63031; padding: 10px; font-weight: bold; text-align: center; border-radius: 5px; margin-bottom: 15px; }
@@ -20,7 +20,7 @@
     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
     th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 14px; }
     th { background-color: #f2f2f2; }
-    .btn-admin { background: #2980b9; margin-top: 5px; padding: 6px 10px; width: auto; }
+    .btn-admin { background: #2980b9; margin-top: 5px; padding: 6px 10px; width: auto; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -39,7 +39,7 @@
       <input type="text" id="documento" placeholder="Ej. 10203040">
     </div>
     <button onclick="iniciarExamen()">Comenzar Evaluación</button>
-    <button onclick="cargarAdmin()" style="background:#7f8c8d; margin-top:15px;">Panel Administrador</button>
+    <button onclick="solicitarAccesoAdmin()" style="background:#7f8c8d; margin-top:15px;">Panel Administrador 🔒</button>
   </div>
 
   <!-- PANTALLA EXAMEN -->
@@ -60,21 +60,23 @@
 
   <!-- PANEL ADMINISTRADOR -->
   <div id="pantalla-admin" style="display:none;">
-    <h2>Panel de Administración</h2>
-    <button onclick="volverInicio()" style="background:#7f8c8d; width:auto;">← Volver</button>
-    <table>
-      <thead>
-        <tr>
-          <th>Documento</th>
-          <th>Nombre</th>
-          <th>Intentos</th>
-          <th>Puntaje</th>
-          <th>Estado</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-      <tbody id="tabla-admin"></tbody>
-    </table>
+    <h2>Panel de Administración 🔒</h2>
+    <button onclick="volverInicio()" style="background:#7f8c8d; width:auto; margin-bottom:15px;">← Volver</button>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Documento</th>
+            <th>Nombre</th>
+            <th>Intentos</th>
+            <th>Puntaje</th>
+            <th>Estado</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-admin"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -83,6 +85,7 @@
   let preguntasCargadas = [];
   let tiempoRestante = 300; // 5 minutos
   let timerInterval;
+  let adminPasswordCache = '';
 
   async function iniciarExamen() {
     const nombre = document.getElementById('nombre').value.trim();
@@ -131,7 +134,7 @@
       
       let html = `<p><strong>${idx + 1}. ${p.texto}</strong></p>`;
       if (p.imagen) {
-        html += `<img src="${p.imagen}" class="img-pregunta" alt="Imagen de pregunta">`;
+        html += `<img src="${p.imagen}" class="img-pregunta" alt="Imagen referente">`;
       }
 
       p.opciones.forEach((op, opIdx) => {
@@ -197,10 +200,27 @@
     }
   }
 
-  async function cargarAdmin() {
-    const res = await fetch('/api/admin/resultados');
-    const data = await res.json();
+  // VALIDACIÓN DE CONTRASEÑA DE ADMINISTRADOR
+  async function solicitarAccesoAdmin() {
+    const password = prompt("Introduce la clave de administrador:");
+    if (!password) return;
 
+    adminPasswordCache = password;
+    await cargarAdmin();
+  }
+
+  async function cargarAdmin() {
+    const res = await fetch('/api/admin/resultados', {
+      headers: { 'x-admin-password': adminPasswordCache }
+    });
+
+    if (res.status === 401) {
+      alert("Contraseña de administrador incorrecta.");
+      adminPasswordCache = '';
+      return;
+    }
+
+    const data = await res.json();
     const tbody = document.getElementById('tabla-admin');
     tbody.innerHTML = '';
 
@@ -210,8 +230,8 @@
         <td>${row.documento}</td>
         <td>${row.nombre}</td>
         <td>${row.intentos_realizados} / 2</td>
-        <td>${row.puntaje !== null ? row.puntaje + '/' + row.total_preguntas : 'N/A'}</td>
-        <td>${row.bloqueado ? 'Bloqueado' : 'Habilitado'}</td>
+        <td>${row.puntaje !== null ? row.puntaje + '/' + row.total_preguntas : 'Pendiente'}</td>
+        <td>${row.bloqueado ? '🔒 Bloqueado' : '✅ Habilitado'}</td>
         <td>
           <button class="btn-admin" onclick="desbloquear('${row.documento}')">Habilitar Intento</button>
         </td>
@@ -224,12 +244,21 @@
   }
 
   async function desbloquear(doc) {
-    await fetch('/api/admin/desbloquear', {
+    const res = await fetch('/api/admin/desbloquear', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-admin-password': adminPasswordCache
+      },
       body: JSON.stringify({ documento: doc })
     });
-    alert(`Permisos restablecidos para la cédula ${doc}`);
+
+    if (res.status === 401) {
+      alert("Sesión no autorizada.");
+      return;
+    }
+
+    alert(`Intentos restablecidos para el usuario con cédula: ${doc}`);
     cargarAdmin();
   }
 
