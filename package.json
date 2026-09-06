@@ -1,17 +1,13 @@
 {
-  "name": "evaluacion",
+  "name": "evaluacion-primeros-auxilios",
   "version": "1.0.0",
-  "description": "",
+  "description": "Evaluación web de primeros auxilios básicos",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6"
   }
 }

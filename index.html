@@ -5,153 +5,237 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Evaluación: Primeros Auxilios Básicos</title>
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eef2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
-    .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 650px; }
-    h2 { color: #2c3e50; margin-top: 0; }
-    .timer { font-size: 1.3rem; font-weight: bold; color: #d9534f; text-align: right; margin-bottom: 20px; background: #ffebee; padding: 10px; border-radius: 5px; }
-    .question { margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
-    .question p { font-weight: 600; color: #34495e; margin-bottom: 12px; font-size: 1.05rem; }
-    .question-img { width: 100%; max-height: 280px; object-fit: contain; background: #f8f9fa; border-radius: 8px; margin: 10px 0 15px 0; border: 1px solid #e0e0e0; }
-    label { display: block; margin: 10px 0; cursor: pointer; color: #444; padding: 8px; border-radius: 5px; transition: background 0.2s; }
-    label:hover { background: #f0f4f8; color: #000; }
-    input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 15px; font-size: 1rem; }
-    button { background: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 1rem; font-weight: bold; transition: background 0.2s; }
-    button:hover { background: #2980b9; }
-    .correct { color: #27ae60; font-weight: bold; }
-    .incorrect { color: #c0392b; font-weight: bold; }
-    .revision-item { background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-radius: 5px; border-left: 5px solid #ccc; }
-    .revision-item.ok { border-color: #27ae60; }
-    .revision-item.fail { border-color: #c0392b; }
+    body { font-family: Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; }
+    .card { max-width: 650px; margin: 0 auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    h2 { color: #2c3e50; text-align: center; }
+    .form-group { margin-bottom: 15px; }
+    label { font-weight: bold; display: block; margin-bottom: 5px; }
+    input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+    button { background: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 10px; }
+    button:hover { background: #219150; }
+    .timer { background: #ffeaa7; color: #d63031; padding: 10px; font-weight: bold; text-align: center; border-radius: 5px; margin-bottom: 15px; }
+    .pregunta-block { margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+    .img-pregunta { width: 100%; max-height: 250px; object-fit: cover; border-radius: 8px; margin: 10px 0; }
+    .error-msg { background: #ff7675; color: white; padding: 12px; border-radius: 5px; text-align: center; margin-bottom: 15px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 14px; }
+    th { background-color: #f2f2f2; }
+    .btn-admin { background: #2980b9; margin-top: 5px; padding: 6px 10px; width: auto; }
   </style>
 </head>
 <body>
 
-<div class="card" id="app">
-  <h2>Evaluación: Primeros Auxilios Básicos</h2>
-  <p>Ingresa tu ID de usuario para comenzar. Tienes un límite máximo de 2 intentos de 5 minutos cada uno.</p>
-  <input type="text" id="usuarioId" placeholder="Ej: estudiante_10">
-  <button onclick="iniciarEvaluacion()">Iniciar Evaluación</button>
+<div class="card">
+  <!-- PANTALLA REGISTRO -->
+  <div id="pantalla-ingreso">
+    <h2>Evaluación de Primeros Auxilios</h2>
+    <div id="error-ingreso" class="error-msg" style="display:none;"></div>
+    <div class="form-group">
+      <label for="nombre">Nombre Completo:</label>
+      <input type="text" id="nombre" placeholder="Ej. Juan Pérez">
+    </div>
+    <div class="form-group">
+      <label for="documento">Documento de Identidad / Cédula:</label>
+      <input type="text" id="documento" placeholder="Ej. 10203040">
+    </div>
+    <button onclick="iniciarExamen()">Comenzar Evaluación</button>
+    <button onclick="cargarAdmin()" style="background:#7f8c8d; margin-top:15px;">Panel Administrador</button>
+  </div>
+
+  <!-- PANTALLA EXAMEN -->
+  <div id="pantalla-examen" style="display:none;">
+    <div class="timer" id="timer">Tiempo restante: 05:00</div>
+    <p><strong>Participante:</strong> <span id="lbl-nombre"></span></p>
+    <p><strong>Número de intento:</strong> <span id="lbl-intento"></span> de 2</p>
+    <form id="quiz-form"></form>
+    <button onclick="enviarRespuestas()">Finalizar y Enviar</button>
+  </div>
+
+  <!-- PANTALLA RESULTADOS -->
+  <div id="pantalla-resultados" style="display:none; text-align:center;">
+    <h2>Resultado de la Evaluación</h2>
+    <h3 id="lbl-puntaje"></h3>
+    <p id="lbl-mensaje-estado"></p>
+  </div>
+
+  <!-- PANEL ADMINISTRADOR -->
+  <div id="pantalla-admin" style="display:none;">
+    <h2>Panel de Administración</h2>
+    <button onclick="volverInicio()" style="background:#7f8c8d; width:auto;">← Volver</button>
+    <table>
+      <thead>
+        <tr>
+          <th>Documento</th>
+          <th>Nombre</th>
+          <th>Intentos</th>
+          <th>Puntaje</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-admin"></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-  let tiempoRestante = 0;
-  let intervaloTimer = null;
+  let usuarioActual = {};
   let preguntasCargadas = [];
-  let usuarioActual = "";
+  let tiempoRestante = 300; // 5 minutos
+  let timerInterval;
 
-  async function iniciarEvaluacion() {
-    usuarioActual = document.getElementById('usuarioId').value.trim();
-    if (!usuarioActual) return alert("Ingresa un ID de usuario válido.");
+  async function iniciarExamen() {
+    const nombre = document.getElementById('nombre').value.trim();
+    const documento = document.getElementById('documento').value.trim();
+    const errorDiv = document.getElementById('error-ingreso');
 
-    try {
-      const res = await fetch('/api/iniciar-evaluacion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuarioId: usuarioActual })
-      });
-
-      const data = await res.json();
-      if (!res.ok) return alert(data.error);
-
-      preguntasCargadas = data.preguntas;
-      tiempoRestante = data.tiempoLimiteSegundos;
-      
-      renderizarExamen(data.intento);
-      iniciarContador();
-    } catch (err) {
-      alert("Error al conectar con el servidor.");
+    if (!nombre || !documento) {
+      errorDiv.innerText = 'Por favor complete todos los campos.';
+      errorDiv.style.display = 'block';
+      return;
     }
-  }
 
-  function renderizarExamen(intento) {
-    let html = `
-      <div class="timer">Tiempo restante: <span id="clock">05:00</span></div>
-      <p><strong>Número de intento:</strong> ${intento} de 2</p>
-      <form id="quizForm">
-    `;
-
-    preguntasCargadas.forEach((p, index) => {
-      html += `
-        <div class="question">
-          <p>${index + 1}. ${p.texto}</p>
-          ${p.imagen ? `<img src="${p.imagen}" alt="Imagen referente a la pregunta" class="question-img">` : ''}
-          ${p.opciones.map((op, i) => `
-            <label>
-              <input type="radio" name="p_${p.id}" value="${i}"> ${op}
-            </label>
-          `).join('')}
-        </div>
-      `;
+    const res = await fetch('/api/iniciar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, documento })
     });
 
-    html += `<button type="button" onclick="enviarRespuestas()">Finalizar y Calificar</button></form>`;
-    document.getElementById('app').innerHTML = html;
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorDiv.innerText = data.error;
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    usuarioActual = { nombre: data.nombre, documento: data.documento };
+    preguntasCargadas = data.preguntas;
+
+    document.getElementById('lbl-nombre').innerText = data.nombre;
+    document.getElementById('lbl-intento').innerText = data.numeroIntento;
+    document.getElementById('pantalla-ingreso').style.display = 'none';
+    document.getElementById('pantalla-examen').style.display = 'block';
+
+    renderizarPreguntas();
+    iniciarTemporizador();
   }
 
-  function iniciarContador() {
-    intervaloTimer = setInterval(() => {
+  function renderizarPreguntas() {
+    const form = document.getElementById('quiz-form');
+    form.innerHTML = '';
+
+    preguntasCargadas.forEach((p, idx) => {
+      const div = document.createElement('div');
+      div.className = 'pregunta-block';
+      
+      let html = `<p><strong>${idx + 1}. ${p.texto}</strong></p>`;
+      if (p.imagen) {
+        html += `<img src="${p.imagen}" class="img-pregunta" alt="Imagen de pregunta">`;
+      }
+
+      p.opciones.forEach((op, opIdx) => {
+        html += `
+          <div>
+            <label style="font-weight:normal;">
+              <input type="radio" name="p_${p.id}" value="${opIdx}"> ${op}
+            </label>
+          </div>
+        `;
+      });
+
+      div.innerHTML = html;
+      form.appendChild(div);
+    });
+  }
+
+  function iniciarTemporizador() {
+    timerInterval = setInterval(() => {
       tiempoRestante--;
-      const min = Math.floor(tiempoRestante / 60);
-      const seg = tiempoRestante % 60;
-      document.getElementById('clock').innerText = `${min < 10 ? '0' : ''}${min}:${seg < 10 ? '0' : ''}${seg}`;
+      let min = Math.floor(tiempoRestante / 60);
+      let sec = tiempoRestante % 60;
+      document.getElementById('timer').innerText = `Tiempo restante: ${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
 
       if (tiempoRestante <= 0) {
-        clearInterval(intervaloTimer);
-        alert("¡El tiempo ha finalizado!");
+        clearInterval(timerInterval);
+        alert('El tiempo ha finalizado.');
         enviarRespuestas();
       }
     }, 1000);
   }
 
   async function enviarRespuestas() {
-    clearInterval(intervaloTimer);
-    const respuestas = {};
+    clearInterval(timerInterval);
 
-    preguntasCargadas.forEach(p => {
+    const respuestas = preguntasCargadas.map(p => {
       const selected = document.querySelector(`input[name="p_${p.id}"]:checked`);
-      if (selected) respuestas[p.id] = parseInt(selected.value);
+      return {
+        preguntaId: p.id,
+        seleccion: selected ? parseInt(selected.value) : -1
+      };
     });
 
-    try {
-      const res = await fetch('/api/finalizar-evaluacion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuarioId: usuarioActual, respuestas })
-      });
+    const res = await fetch('/api/evaluar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        documento: usuarioActual.documento,
+        respuestas
+      })
+    });
 
-      const data = await res.json();
-      if (!res.ok) return alert(data.error);
+    const data = await res.json();
 
-      renderizarResultados(data);
-    } catch (err) {
-      alert("Error al enviar tus respuestas.");
+    document.getElementById('pantalla-examen').style.display = 'none';
+    document.getElementById('pantalla-resultados').style.display = 'block';
+    document.getElementById('lbl-puntaje').innerText = `Puntaje: ${data.puntaje} / ${data.total} (${data.porcentaje}%)`;
+
+    if (data.bloqueado) {
+      document.getElementById('lbl-mensaje-estado').innerText = 'Has alcanzado el límite máximo de 2 intentos permitidos.';
+    } else {
+      document.getElementById('lbl-mensaje-estado').innerText = 'Aún tienes 1 intento disponible si deseas mejorar tu nota.';
     }
   }
 
-  function renderizarResultados(data) {
-    let html = `
-      <h2>Resultados de la Evaluación</h2>
-      <h3 style="color: #2c3e50;">Calificación Final: ${data.calificacion} / 5.0</h3>
-      <p>Respondiste correctamente ${data.aciertos} de ${data.totalPreguntas} preguntas.</p>
-      <hr>
-      <h3>Revisión Detallada:</h3>
-    `;
+  async function cargarAdmin() {
+    const res = await fetch('/api/admin/resultados');
+    const data = await res.json();
 
-    data.revision.forEach((r, i) => {
-      html += `
-        <div class="revision-item ${r.esCorrecta ? 'ok' : 'fail'}">
-          <p><strong>${i + 1}. ${r.pregunta}</strong></p>
-          <p class="${r.esCorrecta ? 'correct' : 'incorrect'}">
-            Tu respuesta: ${r.tuRespuesta} ${r.esCorrecta ? '✓' : '✗'}
-          </p>
-          ${!r.esCorrecta ? `<p>Respuesta correcta: <strong>${r.respuestaCorrecta}</strong></p>` : ''}
-        </div>
+    const tbody = document.getElementById('tabla-admin');
+    tbody.innerHTML = '';
+
+    data.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.documento}</td>
+        <td>${row.nombre}</td>
+        <td>${row.intentos_realizados} / 2</td>
+        <td>${row.puntaje !== null ? row.puntaje + '/' + row.total_preguntas : 'N/A'}</td>
+        <td>${row.bloqueado ? 'Bloqueado' : 'Habilitado'}</td>
+        <td>
+          <button class="btn-admin" onclick="desbloquear('${row.documento}')">Habilitar Intento</button>
+        </td>
       `;
+      tbody.appendChild(tr);
     });
 
-    html += `<button onclick="location.reload()">Regresar al Inicio</button>`;
-    document.getElementById('app').innerHTML = html;
+    document.getElementById('pantalla-ingreso').style.display = 'none';
+    document.getElementById('pantalla-admin').style.display = 'block';
+  }
+
+  async function desbloquear(doc) {
+    await fetch('/api/admin/desbloquear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ documento: doc })
+    });
+    alert(`Permisos restablecidos para la cédula ${doc}`);
+    cargarAdmin();
+  }
+
+  function volverInicio() {
+    document.getElementById('pantalla-admin').style.display = 'none';
+    document.getElementById('pantalla-ingreso').style.display = 'block';
   }
 </script>
 </body>

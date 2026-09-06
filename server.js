@@ -1,10 +1,48 @@
 const express = require('express');
+const path = require('path');
+const sqlite3 = require('sqlite3').verbose();
+
 const app = express();
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static('.')); // Sirve el archivo index.html automáticamente
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Banco de 25 preguntas sobre Primeros Auxilios Básicos con imágenes explicativas
+// Inicializar Base de Datos SQLite
+const db = new sqlite3.Database('./database.db', (err) => {
+  if (err) {
+    console.error('Error al abrir la base de datos:', err.message);
+  } else {
+    console.log('Conectado a la base de datos SQLite.');
+  }
+});
+
+// Crear tablas si no existen
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS usuarios (
+      documento TEXT PRIMARY KEY,
+      nombre TEXT,
+      intentos_realizados INTEGER DEFAULT 0,
+      bloqueado INTEGER DEFAULT 0
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS intentos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      documento TEXT,
+      numero_intento INTEGER,
+      puntaje INTEGER,
+      total_preguntas INTEGER,
+      fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+      respuestas_json TEXT,
+      FOREIGN KEY (documento) REFERENCES usuarios(documento)
+    )
+  `);
+});
+
+// Banco completo de 25 preguntas
 const bancoPreguntas = [
   { id: 1, texto: "¿Cuál es la regla de oro en primeros auxilios (P.A.S.)?", imagen: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=500", opciones: ["Proteger, Avisar, Socorrer", "Prevenir, Auxiliar, Sanar", "Presionar, Atender, Salvar", "Parar, Analizar, Secar"], correcta: 0 },
   { id: 2, texto: "¿Cuál es la relación de compresiones e insuflaciones en RCP para adultos?", imagen: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=500", opciones: ["15 compresiones x 2 insuflaciones", "30 compresiones x 2 insuflaciones", "50 compresiones x 5 insuflaciones", "10 compresiones x 1 insuflación"], correcta: 1 },
@@ -33,108 +71,167 @@ const bancoPreguntas = [
   { id: 25, texto: "¿Qué significan las siglas DEA en emergencias médicas?", imagen: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=500", opciones: ["Desfibrilador Externo Automático", "Diagnóstico de Emergencia Avanzado", "Dispositivo de Evaluación Anatómica", "Dosis Emergente de Auxilio"], correcta: 0 }
 ];
 
-// Almacenamiento temporal en memoria
-const usuarios = {};
-
-// Iniciar evaluación
-app.post('/api/iniciar-evaluacion', (req, res) => {
-  const { usuarioId } = req.body;
-
-  if (!usuarioId) {
-    return res.status(400).json({ error: 'Debes ingresar un ID de usuario válido.' });
+// Algoritmo para seleccionar 5 preguntas minimizando solapamiento (<15% repetición)
+function seleccionarPreguntasSinRepeticion(idsAnteriores = []) {
+  let disponibles = bancoPreguntas.filter(p => !idsAnteriores.includes(p.id));
+  
+  // Si no hay suficientes preguntas no vistas, se completa con el resto
+  if (disponibles.length < 5) {
+    const faltantes = 5 - disponibles.length;
+    const usadas = bancoPreguntas.filter(p => idsAnteriores.includes(p.id));
+    usadas.sort(() => 0.5 - Math.random());
+    disponibles = disponibles.concat(usadas.slice(0, faltantes));
+  } else {
+    disponibles.sort(() => 0.5 - Math.random());
+    disponibles = disponibles.slice(0, 5);
   }
 
-  if (!usuarios[usuarioId]) {
-    usuarios[usuarioId] = { intentos: 0, historialPreguntas: [] };
-  }
-
-  const usuario = usuarios[usuarioId];
-
-  if (usuario.intentos >= 2) {
-    return res.status(403).json({ error: 'Has alcanzado el límite máximo de 2 intentos.' });
-  }
-
-  // Filtrado de preguntas no usadas para garantizar 0% de repetición
-  const preguntasUsadas = new Set(usuario.historialPreguntas);
-  const preguntasDisponibles = bancoPreguntas.filter(p => !preguntasUsadas.has(p.id));
-
-  // Seleccionar 5 preguntas al azar
-  const seleccionadas = preguntasDisponibles
-    .sort(() => 0.5 - Math.random())
-    .slice(0, 5);
-
-  usuario.intentos += 1;
-  const intentoActual = {
-    id: Date.now(),
-    preguntas: seleccionadas,
-    inicio: Date.now(),
-    tiempoLimiteMs: 5 * 60 * 1000 // 5 minutos de tiempo límite
-  };
-
-  usuario.intentoActivo = intentoActual;
-  usuario.historialPreguntas.push(...seleccionadas.map(p => p.id));
-
-  // Enviar preguntas e imagen sin revelar las respuestas correctas
-  const preguntasParaCliente = seleccionadas.map(({ id, texto, imagen, opciones }) => ({ 
-    id, 
-    texto, 
-    imagen, 
-    opciones 
+  return disponibles.map(q => ({
+    id: q.id,
+    texto: q.texto,
+    imagen: q.imagen,
+    opciones: q.opciones
   }));
+}
 
-  res.json({
-    intento: usuario.intentos,
-    tiempoLimiteSegundos: 300,
-    preguntas: preguntasParaCliente
+// Ruta: Validar/Registrar participante y obtener evaluación
+app.post('/api/iniciar', (req, res) => {
+  const { documento, nombre } = req.body;
+
+  if (!documento || !nombre) {
+    return res.status(400).json({ error: 'Documento y nombre son obligatorios.' });
+  }
+
+  db.get('SELECT * FROM usuarios WHERE documento = ?', [documento], (err, usuario) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (!usuario) {
+      // Registrar nuevo usuario
+      db.run('INSERT INTO usuarios (documento, nombre, intentos_realizados, bloqueado) VALUES (?, ?, 0, 0)', 
+        [documento, nombre], (err) => {
+          if (err) return res.status(500).json({ error: err.message });
+          enviarEvaluacion(documento, nombre, 1, [], res);
+        });
+    } else {
+      if (usuario.bloqueado || usuario.intentos_realizados >= 2) {
+        return res.status(403).json({ 
+          error: 'Has alcanzado el límite de 2 intentos permitidos. Contacta al administrador para que habilite un nuevo intento.' 
+        });
+      }
+
+      // Obtener preguntas del primer intento para evitar solapamiento (>85% de variación)
+      db.get('SELECT respuestas_json FROM intentos WHERE documento = ? ORDER BY id ASC LIMIT 1', [documento], (err, ultimoIntento) => {
+        let idsPrevios = [];
+        if (ultimoIntento && ultimoIntento.respuestas_json) {
+          try {
+            const parsed = JSON.parse(ultimoIntento.respuestas_json);
+            idsPrevios = parsed.map(r => r.preguntaId);
+          } catch(e) {}
+        }
+        enviarEvaluacion(documento, usuario.nombre, usuario.intentos_realizados + 1, idsPrevios, res);
+      });
+    }
   });
 });
 
-// Finalizar y calificar evaluación
-app.post('/api/finalizar-evaluacion', (req, res) => {
-  const { usuarioId, respuestas } = req.body;
-  const usuario = usuarios[usuarioId];
-
-  if (!usuario || !usuario.intentoActivo) {
-    return res.status(400).json({ error: 'No hay un intento activo para este usuario.' });
-  }
-
-  const intento = usuario.intentoActivo;
-  const tiempoTranscurrido = Date.now() - intento.inicio;
-
-  // Tolerancia de 5 segundos adicionales por latencia de red
-  if (tiempoTranscurrido > intento.tiempoLimiteMs + 5000) {
-    usuario.intentoActivo = null;
-    return res.status(408).json({ error: 'Tiempo agotado. La evaluación no fue procesada.' });
-  }
-
-  let aciertos = 0;
-  const revision = intento.preguntas.map(p => {
-    const seleccionada = respuestas[p.id];
-    const esCorrecta = seleccionada === p.correcta;
-    if (esCorrecta) aciertos++;
-
-    return {
-      pregunta: p.texto,
-      opciones: p.opciones,
-      tuRespuesta: p.opciones[seleccionada] ?? 'Sin responder',
-      respuestaCorrecta: p.opciones[p.correcta],
-      esCorrecta
-    };
-  });
-
-  const notaFinal = (aciertos / intento.preguntas.length) * 5.0;
-  usuario.intentoActivo = null;
-
+function enviarEvaluacion(documento, nombre, numeroIntento, idsPrevios, res) {
+  const preguntasSeleccionadas = seleccionarPreguntasSinRepeticion(idsPrevios);
   res.json({
-    calificacion: notaFinal.toFixed(1),
-    aciertos,
-    totalPreguntas: intento.preguntas.length,
-    revision
+    documento,
+    nombre,
+    numeroIntento,
+    maxIntentos: 2,
+    preguntas: preguntasSeleccionadas
+  });
+}
+
+// Ruta: Calificar y registrar en la base de datos
+app.post('/api/evaluar', (req, res) => {
+  const { documento, respuestas } = req.body; // respuestas = [{ preguntaId: 1, seleccion: 0 }]
+
+  if (!documento || !Array.isArray(respuestas)) {
+    return res.status(400).json({ error: 'Datos de evaluación inválidos.' });
+  }
+
+  db.get('SELECT * FROM usuarios WHERE documento = ?', [documento], (err, usuario) => {
+    if (err || !usuario) return res.status(400).json({ error: 'Usuario no registrado.' });
+
+    if (usuario.intentos_realizados >= 2 || usuario.bloqueado) {
+      return res.status(403).json({ error: 'Límite de intentos superado.' });
+    }
+
+    let aciertos = 0;
+    const detalleRespuestas = respuestas.map(r => {
+      const preg = bancoPreguntas.find(p => p.id === r.preguntaId);
+      const esCorrecta = preg && preg.correcta === r.seleccion;
+      if (esCorrecta) aciertos++;
+      return {
+        preguntaId: r.preguntaId,
+        seleccion: r.seleccion,
+        correcta: preg ? preg.correcta : null,
+        esCorrecta
+      };
+    });
+
+    const nuevoNumeroIntento = usuario.intentos_realizados + 1;
+    const nuevoBloqueo = nuevoNumeroIntento >= 2 ? 1 : 0;
+
+    db.serialize(() => {
+      // Guardar intento
+      db.run(
+        'INSERT INTO intentos (documento, numero_intento, puntaje, total_preguntas, respuestas_json) VALUES (?, ?, ?, ?, ?)',
+        [documento, nuevoNumeroIntento, aciertos, respuestas.length, JSON.stringify(detalleRespuestas)]
+      );
+
+      // Actualizar estado del usuario
+      db.run(
+        'UPDATE usuarios SET intentos_realizados = ?, bloqueado = ? WHERE documento = ?',
+        [nuevoNumeroIntento, nuevoBloqueo, documento]
+      );
+    });
+
+    res.json({
+      puntaje: aciertos,
+      total: respuestas.length,
+      porcentaje: ((aciertos / respuestas.length) * 100).toFixed(0),
+      intentoActual: nuevoNumeroIntento,
+      bloqueado: nuevoBloqueo === 1
+    });
   });
 });
 
-// Iniciar servidor
-const PORT = process.env.PORT || 3000;
+// RUTAS ADMINISTRATIVAS
+
+// Consultar todos los participantes e intentos
+app.get('/api/admin/resultados', (req, res) => {
+  const query = `
+    SELECT u.documento, u.nombre, u.intentos_realizados, u.bloqueado, 
+           i.numero_intento, i.puntaje, i.total_preguntas, i.fecha
+    FROM usuarios u
+    LEFT JOIN intentos i ON u.documento = i.documento
+    ORDER BY u.nombre ASC, i.numero_intento ASC
+  `;
+  db.all(query, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Habilitar / Desbloquear participante para más intentos
+app.post('/api/admin/desbloquear', (req, res) => {
+  const { documento } = req.body;
+  if (!documento) return res.status(400).json({ error: 'Documento requerido.' });
+
+  db.run(
+    'UPDATE usuarios SET intentos_realizados = 0, bloqueado = 0 WHERE documento = ?',
+    [documento],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ mensaje: `Usuario ${documento} desbloqueado exitosamente.` });
+    }
+  );
+});
+
 app.listen(PORT, () => {
-  console.log(`Servidor ejecutándose en puerto ${PORT}`);
+  console.log(`Servidor ejecutándose en el puerto ${PORT}`);
 });
